@@ -275,8 +275,11 @@ function generate_receipt($patient_id, $encounter=0) {
   global $sl_err, $sl_cash_acc, $css_header, $details, $INTEGRATED_AR;
 
   // Get details for what we guess is the primary facility.
-  $frow = sqlQuery("SELECT * FROM facility " .
-    "ORDER BY billing_location DESC, accepts_assignment DESC, id LIMIT 1");
+
+  // *************   mike-h30 - 09-30-12
+  // Moved SQL - see "BEGIN mike-h30 Facility Based On Enounter ID" 
+  //$frow = sqlQuery("SELECT * FROM facility " .
+  //  "ORDER BY billing_location DESC, accepts_assignment DESC, id LIMIT 1");
 
   $patdata = getPatientData($patient_id, 'fname,mname,lname,pubpid,street,city,state,postal_code,providerID');
 
@@ -380,7 +383,21 @@ function generate_receipt($patient_id, $encounter=0) {
 <center>
 <?php 
   if ( $GLOBALS['receipts_by_provider'] && !empty($providerrow) ) { printProviderHeader($providerrow); }
-  else { printFacilityHeader($frow); }
+  else { 
+// ****************   BEGIN mike-h30 Facility Based On Enounter ID *******************
+
+// Get facility ID from table form_encounter
+$tmp = sqlQuery("SELECT facility_id FROM form_encounter WHERE " .
+        "encounter ='".$encounter."'" );
+      
+      $facilityID = $tmp['facility_id'];
+
+  $frow = sqlQuery("SELECT * FROM facility WHERE id='".$facilityID."'" .
+    "ORDER BY billing_location DESC, accepts_assignment DESC, id LIMIT 1");
+
+// ****************   END mike-h30 Facility Based On Enounter ID *******************
+    printFacilityHeader($frow); 
+  }
 ?>
 <?php
   echo xlt("Receipt Generated") . ":" . text(date(' F j, Y'));
